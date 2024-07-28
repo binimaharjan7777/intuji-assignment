@@ -1,0 +1,38 @@
+/* css/styles.css */
+
+.error {
+    color: #f56565; /* Tailwind's text-red-500 */
+    font-size: 0.875rem; /* Tailwind's text-sm */
+    margin-top: 0.25rem; /* Tailwind's mt-1 */
+    display: none; /* Hide errors initially */
+}
+
+input.border-red-500,
+textarea.border-red-500,
+select.border-red-500 {
+    border-color: #f56565; /* Tailwind's border-red-500 */
+}
+
+.bg-red-100 {
+    background-color: #fed7d7;
+}
+
+.text-red-700 {
+    color: #c53030;
+}
+
+.bg-blue-500 {
+    background-color: #4299e1;
+}
+
+.bg-blue-700:hover {
+    background-color: #2b6cb0;
+}
+
+.bg-gray-500 {
+    background-color: #a0aec0;
+}
+
+.bg-gray-700:hover {
+    background-color: #4a5568;
+}
