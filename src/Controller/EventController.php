@@ -22,6 +22,7 @@ class EventController
 
     public function index()
     {
+
         session_start();
 
         try {

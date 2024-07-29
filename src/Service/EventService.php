@@ -5,6 +5,8 @@ namespace App\Service;
 use App\Interface\EventAuthInterface;
 use App\Interface\EventInterface;
 use App\Util\GoogleCalendarUtil;
+use Exception;
+use InvalidArgumentException;
 
 /**
  * Class EventService
@@ -26,9 +28,18 @@ class EventService implements EventInterface, EventAuthInterface
      */
     public function __construct()
     {
-        $this->googleCalendarUtil = GoogleCalendarUtil::getInstance();
+        try {
+            $this->googleCalendarUtil = GoogleCalendarUtil::getInstance();
+        } catch (InvalidArgumentException $e) {
+            // Handle missing credentials error
+            error_log("Google Calendar Util error: " . $e->getMessage());
+            throw new Exception("Could not initialize Google Calendar Service: " . $e->getMessage());
+        } catch (Exception $e) {
+            // Handle other exceptions
+            error_log("Google Calendar Util initialization error: " . $e->getMessage());
+            throw new Exception("An unexpected error occurred: " . $e->getMessage());
+        }
     }
-
     /**
      * Authenticate the user with a given authorization code.
      *
@@ -37,7 +48,7 @@ class EventService implements EventInterface, EventAuthInterface
      */
     public function authenticate($code)
     {
-        $this->wrapExceptions(function() use ($code) {
+        $this->wrapExceptions(function () use ($code) {
             $this->googleCalendarUtil->authenticate($code);
         });
     }
@@ -50,7 +61,7 @@ class EventService implements EventInterface, EventAuthInterface
      */
     public function createAuthUrl()
     {
-        return $this->wrapExceptions(function() {
+        return $this->wrapExceptions(function () {
             return $this->googleCalendarUtil->createAuthUrl();
         });
     }
@@ -63,7 +74,7 @@ class EventService implements EventInterface, EventAuthInterface
      */
     public function list()
     {
-        return $this->wrapExceptions(function() {
+        return $this->wrapExceptions(function () {
             return $this->googleCalendarUtil->list();
         });
     }
@@ -77,7 +88,7 @@ class EventService implements EventInterface, EventAuthInterface
      */
     public function create($data)
     {
-        return $this->wrapExceptions(function() use ($data) {
+        return $this->wrapExceptions(function () use ($data) {
             return $this->googleCalendarUtil->create($data, 'primary');
         });
     }
@@ -90,7 +101,7 @@ class EventService implements EventInterface, EventAuthInterface
      */
     public function delete($eventId)
     {
-        $this->wrapExceptions(function() use ($eventId) {
+        $this->wrapExceptions(function () use ($eventId) {
             $this->googleCalendarUtil->delete($eventId, 'primary');
         });
     }
@@ -112,7 +123,7 @@ class EventService implements EventInterface, EventAuthInterface
      */
     public function setAccessToken()
     {
-        $this->wrapExceptions(function() {
+        $this->wrapExceptions(function () {
             $accessToken = $this->getAccessToken();
             if ($accessToken !== null) {
                 $this->googleCalendarUtil->setAccessToken($accessToken);
@@ -127,7 +138,7 @@ class EventService implements EventInterface, EventAuthInterface
      */
     public function disconnect()
     {
-        $this->wrapExceptions(function() {
+        $this->wrapExceptions(function () {
             $this->googleCalendarUtil->disconnect();
         });
     }
@@ -143,8 +154,8 @@ class EventService implements EventInterface, EventAuthInterface
     {
         try {
             return $function();
-        } catch (\Exception $e) {
-            throw new \Exception('An error occurred: ' . $e->getMessage());
+        } catch (Exception $e) {
+            throw new Exception('An error occurred: ' . $e->getMessage());
         }
     }
 }

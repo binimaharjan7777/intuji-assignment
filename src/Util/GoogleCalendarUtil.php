@@ -2,9 +2,11 @@
 
 namespace App\Util;
 
+use Exception;
 use Google_Client;
 use Google_Service_Calendar;
 use Google_Service_Calendar_Event;
+use InvalidArgumentException;
 
 /**
  * Class GoogleCalendarUtil
@@ -38,15 +40,37 @@ class GoogleCalendarUtil
         $this->client = new Google_Client();
         $config = require __DIR__ . '/../../config/config.php';
 
-        $this->client->setApplicationName($config['google']['application_name']);
-        $this->client->setAuthConfig($config['google']['credentials_path']);
-        $this->client->setRedirectUri($config['google']['redirect_uri']);
-        $this->client->setScopes($config['google']['scopes']);
-        $this->client->setAccessType('offline');
-        $this->client->setPrompt('select_account consent');
+        // Verify if the credentials file exists
+        $credentialsPath = $config['google']['credentials_path'];
+        if (!file_exists($credentialsPath)) {
+            // Log the error or handle it in a way suitable for your application
+            error_log("Google Calendar API credentials file is missing at: " . $credentialsPath);
 
-        $this->calendarService = new Google_Service_Calendar($this->client);
+            // Throw an exception to be caught later in the calling code
+            throw new InvalidArgumentException("The credentials.json file is missing at: " . $credentialsPath);
+        }
+
+        // Wrap Google Client initialization in a try-catch block
+        try {
+            $this->client->setApplicationName($config['google']['application_name']);
+            $this->client->setAuthConfig($credentialsPath);
+            $this->client->setRedirectUri($config['google']['redirect_uri']);
+            $this->client->setScopes($config['google']['scopes']);
+            $this->client->setAccessType('offline');
+            $this->client->setPrompt('select_account consent');
+
+            $this->calendarService = new Google_Service_Calendar($this->client);
+        } catch (InvalidArgumentException $e) {
+            // Handle any exceptions related to invalid arguments
+            error_log("Error initializing Google Client: " . $e->getMessage());
+            throw new Exception('Failed to initialize Google Client: ' . $e->getMessage());
+        } catch (Exception $e) {
+            // Handle any general exceptions
+            error_log("Unexpected error during Google Client initialization: " . $e->getMessage());
+            throw new Exception('Unexpected error initializing Google Client: ' . $e->getMessage());
+        }
     }
+
 
     /**
      * Get the singleton instance of GoogleCalendarUtil.
@@ -83,9 +107,9 @@ class GoogleCalendarUtil
         $this->wrapExceptions(function () use ($code) {
             $client = $this->getClient();
             $accessToken = $client->fetchAccessTokenWithAuthCode($code);
-            
+
             if (isset($accessToken['error'])) {
-                throw new \Exception('Failed to fetch access token: ' . $accessToken['error']);
+                throw new Exception('Failed to fetch access token: ' . $accessToken['error']);
             }
 
             $_SESSION['access_token'] = $accessToken;
@@ -207,8 +231,8 @@ class GoogleCalendarUtil
     {
         try {
             return $function();
-        } catch (\Exception $e) {
-            throw new \Exception('An error occurred in GoogleCalendarUtil: ' . $e->getMessage());
+        } catch (Exception $e) {
+            throw new Exception('An error occurred in GoogleCalendarUtil: ' . $e->getMessage());
         }
     }
 }
